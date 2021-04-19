@@ -2,8 +2,9 @@
  * @author  Syed Asad Amin
  * @file    app.ino
  * @date    March 30th, 2021
- * @version v0.0.0 -> CHANGELOG
+ * @version v0.0.1 -> CHANGELOG
  *              | v0.0.0 -> Phase 1 of the application (Sensor Readout)
+ *              | v0.0.1 -> Phase 2 of the application (Data on LCD)
  * 
  * @note    This program is written in C++ on ESP32 using Arduino Core Framework
  *          to integrate a level sensor, lcd and data logger.
@@ -16,6 +17,7 @@
 
 //===== INCLUDE SECTION ======================================================//
 #include "LevelSensor.h"
+#include <LiquidCrystal_I2C.h>
 //============================================================================//
 
 //===== DEFINITIONS SECTION ==================================================//
@@ -31,6 +33,11 @@ static portMUX_TYPE timerMux = portMUX_INITIALIZER_UNLOCKED;
 
 //===== GLOBAL VARIABLES SECTION =============================================//
 LevelSensor::MagnetoProbe_SYWA sensor;
+
+static const uint8_t LCD_ADDR = 0x27;
+static const uint8_t LCD_COLS = 20;
+static const uint8_t LCD_ROWS = 4;
+LiquidCrystal_I2C lcd(LCD_ADDR, LCD_COLS, LCD_ROWS);
 //============================================================================//
 
 //===== ISR SECTION ==========================================================//
@@ -55,6 +62,10 @@ void setup(void) {
     InitSerial();
     InitGPIO();
     InitTimer();
+
+    lcd.init();
+    lcd.backlight();
+    lcd.clear();
 
     if(sensor.begin()) {
         debug.println("Level sensor initialized successfully.");
@@ -91,13 +102,28 @@ void InitTimer(void) {
 void showSensorData(void) {
     debug.print("Fuel Level: ");
     debug.print(sensor.getFuelLevel() / 10);
-    debug.println();
+    debug.println(" cm");
 
     debug.print("Water Level: ");
     debug.print(sensor.getWaterLevel() / 10);
-    debug.println();
+    debug.println(" cm");
 
     debug.print("Fuel Avg Temp: ");
     debug.print(sensor.getFuelAvgTemp());
-    debug.println();
+    debug.println(" C");
+
+    lcd.setCursor(0, 0);
+    lcd.print("FL: ");
+    lcd.print(sensor.getFuelLevel() / 10);
+    lcd.print(" cm");
+
+    lcd.setCursor(0, 1);
+    lcd.print("WL: ");
+    lcd.print(sensor.getWaterLevel() / 10);
+    lcd.print(" cm");
+
+    lcd.setCursor(0, 2);
+    lcd.print("FAT: ");
+    lcd.print(sensor.getFuelAvgTemp());
+    lcd.print(" C");
 }
