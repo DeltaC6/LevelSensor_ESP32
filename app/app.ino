@@ -67,8 +67,8 @@ void setup(void) {
 
 void loop(void) {
     sensor.getData();
-
     showSensorData();
+    delay(1000);
 }
 
 void InitSerial(void) {

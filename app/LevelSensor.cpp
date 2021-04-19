@@ -138,20 +138,19 @@ namespace LevelSensor {
     void MagnetoProbe_SYWA::write(const uint8_t *buf, uint32_t len) {
         rs485ModeTX();
         modbus->write(buf, len);
-        delay(100);
+        delay(50);
     }
 
     void MagnetoProbe_SYWA::read(uint8_t *buf, uint32_t len) {
         rs485ModeRX();
+        // while(modbus->available() == 0); // Wain in blocking mode
         if(modbus->available()) {
             modbus->read(buf, len);
         }
-        delay(100);
+        delay(50);
     }
 
     bool MagnetoProbe_SYWA::sendData(const uint8_t *buf, uint32_t len) {
-        bool ret = false;
-
         uint16_t mCRC = getCRC(buf, len);
         uint32_t lenCRC = sizeof(mCRC);
         uint32_t totLen = len + lenCRC;
@@ -163,7 +162,7 @@ namespace LevelSensor {
         write(buffer, totLen);
 
         free(buffer);
-        return ret;
+        return true;
     }
 
     void MagnetoProbe_SYWA::rs485ModeTX(void) {
