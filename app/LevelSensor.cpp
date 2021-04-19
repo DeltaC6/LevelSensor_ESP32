@@ -9,7 +9,8 @@
  *              | v0.0.3 -> Added support for probe address read and write
  *              | v0.0.4 -> Added support for probe address response packet
  *                          processing
- *              | v0.0.5 -> 
+ *              | v0.0.5 -> Added support for probe level sensor data packets
+ *              | v0.0.6 -> Added getters and setters for the data packets
  * 
  * @note    This is a library for Magnetostrictive Probe - (SYWA) written in
  *          C++ on ESP32 Arduino Core Framework.
@@ -117,6 +118,23 @@ namespace LevelSensor {
         return processData();
     }
 
+    bool MagnetoProbe_SYWA::getData(void) {
+        const uint8_t packet[] = {
+            probeAddress,                       // 0x??
+            readAddress,                        // 0x04
+            (regFuelLevelL >> 8) & 0xFF,        // 0x00
+            (regFuelLevelL & 0xFF),             // 0x00
+            (noOfRegisters >> 8) & 0xFF,        // 0x00
+            (noOfRegisters & 0xFF)              // 0x10
+        };
+
+        sendData(packet, sizeof(packet));
+        delay(100);
+
+        read(rawData, sizeof(rawData));
+        return processData();
+    }
+
     void MagnetoProbe_SYWA::write(const uint8_t *buf, uint32_t len) {
         rs485ModeTX();
         modbus->write(buf, len);
@@ -174,7 +192,22 @@ namespace LevelSensor {
 
         idx++;
         if(foundFlag) {
-
+            if(rawData[idx] == readAddress) {
+                // 0x??, 0x04, 0x20, 0xNN, CRC_L, CRC_H
+                idx++;
+                uint32_t len = rawData[idx++];
+                uint32_t n = len / sizeof(float);
+                for(uint32_t i = 0; i < n; i++) {
+                    sData[2] = rawData[idx++];
+                    sData[3] = rawData[idx++];
+                    sData[0] = rawData[idx++];
+                    sData[1] = rawData[idx++];
+                    memcpy(&data.values[i], sData, sizeof(float));
+                }
+                uint16_t mCRC = getCRC(rawData, idx);
+                uint16_t pCRC = rawData[idx] + (rawData[idx+1] << 8);
+                if(mCRC == pCRC) { validFlag = true; }
+            }
         }
         if(broadcastFlag) {
             if(rawData[idx] == readAddress) {

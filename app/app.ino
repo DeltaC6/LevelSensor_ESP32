@@ -30,7 +30,7 @@ static portMUX_TYPE timerMux = portMUX_INITIALIZER_UNLOCKED;
 //============================================================================//
 
 //===== GLOBAL VARIABLES SECTION =============================================//
-
+LevelSensor::MagnetoProbe_SYWA sensor;
 //============================================================================//
 
 //===== ISR SECTION ==========================================================//
@@ -56,11 +56,19 @@ void setup(void) {
     InitGPIO();
     InitTimer();
 
+    if(sensor.begin()) {
+        debug.println("Level sensor initialized successfully.");
+    }
+
+    sensor.setProbeAddress(0x07);
+
     debug.println("Initialization complete.");
 }
 
 void loop(void) {
+    sensor.getData();
 
+    showSensorData();
 }
 
 void InitSerial(void) {
@@ -70,7 +78,6 @@ void InitSerial(void) {
 
 void InitGPIO(void) {
     pinMode(LED_BLUE, OUTPUT);
-    
     digitalWrite(LED_BLUE, LOW);
 }
 
@@ -79,4 +86,18 @@ void InitTimer(void) {
     timerAttachInterrupt(timer, &timerISR, true);
     timerAlarmWrite(timer, 1000, true);
     timerAlarmEnable(timer);
+}
+
+void showSensorData(void) {
+    debug.print("Fuel Level: ");
+    debug.print(sensor.getFuelLevel() / 10);
+    debug.println();
+
+    debug.print("Water Level: ");
+    debug.print(sensor.getWaterLevel() / 10);
+    debug.println();
+
+    debug.print("Fuel Avg Temp: ");
+    debug.print(sensor.getFuelAvgTemp());
+    debug.println();
 }

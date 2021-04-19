@@ -9,7 +9,8 @@
  *              | v0.0.3 -> Added support for probe address read and write
  *              | v0.0.4 -> Added support for probe address response packet
  *                          processing
- *              | v0.0.5 -> 
+ *              | v0.0.5 -> Added support for probe level sensor data packets
+ *              | v0.0.6 -> Added getters and setters for the data packets
  * 
  * @note    This is a library for Magnetostrictive Probe - (SYWA) written in
  *          C++ on ESP32 Arduino Core Framework.
@@ -70,6 +71,39 @@ namespace LevelSensor {
              */
             bool writeProbeAddress(const uint8_t add);
 
+            /*!
+             * @brief Gets the sensor reading by sending valid query packet frame
+             * @param None
+             * @return [bool] true if success
+             */
+            bool getData(void);
+
+            // GETTERS
+
+            inline uint8_t getProbeAddress(void) const { return probeAddress; }
+
+            inline float getFuelLevel(void) const { return data.value.fuelLevel; }
+            inline float getWaterLevel(void) const { return data.value.waterLevel; }
+            inline float getFuelAvgTemp(void) const { return data.value.fuelAvgTemp; }
+            inline float getAPointTemp(void) const { return data.value.aPointTemp; }
+            inline float getBPointTemp(void) const { return data.value.bPointTemp; }
+            inline float getCPointTemp(void) const { return data.value.cPointTemp; }
+            inline float getDPointTemp(void) const { return data.value.dPointTemp; }
+            inline float getEPointTemp(void) const { return data.value.ePointTemp; }
+
+            // SETTERS
+
+            inline void setProbeAddress(const uint8_t add) { probeAddress = add; };
+
+            inline void setFuelLevel(const float val) { data.value.fuelLevel = val; }
+            inline void setWaterLevel(const float val) { data.value.waterLevel = val; }
+            inline void setFuelAvgTemp(const float val) { data.value.fuelAvgTemp = val; }
+            inline void setAPointTemp(const float val) { data.value.aPointTemp = val; }
+            inline void setBPointTemp(const float val) { data.value.bPointTemp = val; }
+            inline void setCPointTemp(const float val) { data.value.cPointTemp = val; }
+            inline void setDPointTemp(const float val) { data.value.dPointTemp = val; }
+            inline void setEPointTemp(const float val) { data.value.ePointTemp = val; }
+
         protected:
             /*!
              * @brief Writes the data to serial
@@ -87,6 +121,12 @@ namespace LevelSensor {
              */
             void read(uint8_t *buf, uint32_t len);
 
+            /*!
+             * @brief Creates a valid packet frame to query the sensor
+             * @param [uint8_t] Buffer to write on serial
+             * @param [uint32_t] No of character to write
+             * @return None
+             */
             bool sendData(const uint8_t *buf, uint32_t len);
 
             /*!
@@ -129,7 +169,7 @@ namespace LevelSensor {
 
             uint8_t rawData[40];
             union {
-                float value[8];
+                float values[8];
                 struct {
                     float fuelLevel;
                     float waterLevel;
@@ -139,7 +179,7 @@ namespace LevelSensor {
                     float cPointTemp;
                     float dPointTemp;
                     float ePointTemp;
-                } values;
+                } value;
             } data;
 
             uint8_t probeAddress;
