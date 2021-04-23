@@ -96,14 +96,14 @@ Just simply upload the program using Arduino IDE.
 
 ## TESTING
 
-- ❌ Sensor
-- ❌ LCD
+- ✔️ Sensor
+- ✔️ LCD
 - ❌ Logging
 - ❌ Bluetooth Stream
 
 ## TODO
 
-- Modbus sensor readout library
-- LCD interface
-- Data logging
-- bluetooth stream
+- ✔️ Modbus sensor readout library
+- ✔️ LCD interface
+- ❌ Data logging
+- ❌ Bluetooth Stream

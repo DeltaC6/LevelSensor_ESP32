@@ -2,7 +2,7 @@
  * @author  Syed Asad Amin
  * @file    LevelSensor.h
  * @date    March 30th, 2021
- * @version V0.0.4 -> CHANGELOG
+ * @version V0.0.7 -> CHANGELOG
  *              | v0.0.0 -> Added class library for level sensor
  *              | v0.0.1 -> Added hardware serial support
  *              | v0.0.2 -> Added fast CRC16/MODBUS calculation support
@@ -11,6 +11,7 @@
  *                          processing
  *              | v0.0.5 -> Added support for probe level sensor data packets
  *              | v0.0.6 -> Added getters and setters for the data packets
+ *              | v0.0.7 -> Added debugging messages
  * 
  * @note    This is a library for Magnetostrictive Probe - (SYWA) written in
  *          C++ on ESP32 Arduino Core Framework.

@@ -2,7 +2,7 @@
  * @author  Syed Asad Amin
  * @file    LevelSensor.cpp
  * @date    March 30th, 2021
- * @version V0.0.4 -> CHANGELOG
+ * @version V0.0.7 -> CHANGELOG
  *              | v0.0.0 -> Added class library for level sensor
  *              | v0.0.1 -> Added hardware serial support
  *              | v0.0.2 -> Added fast CRC16/MODBUS calculation support
@@ -11,6 +11,7 @@
  *                          processing
  *              | v0.0.5 -> Added support for probe level sensor data packets
  *              | v0.0.6 -> Added getters and setters for the data packets
+ *              | v0.0.7 -> Added debugging messages
  * 
  * @note    This is a library for Magnetostrictive Probe - (SYWA) written in
  *          C++ on ESP32 Arduino Core Framework.
@@ -24,6 +25,8 @@
  */
 
 #include "LevelSensor.h"
+
+#define DEBUG_MODE 1
 
 namespace LevelSensor {
 
@@ -79,7 +82,17 @@ namespace LevelSensor {
         modbus->setTimeout(1000);
         modbus->setRxBufferSize(256);
 
+        pinMode(RS485_DE, OUTPUT);
+        pinMode(RS485_RE, OUTPUT);
+
+        digitalWrite(RS485_DE, LOW);
+        digitalWrite(RS485_RE, LOW);
+
         delay(50);
+
+        #ifdef DEBUG_MODE
+        Serial.println("Level Sensor Init Complete.");
+        #endif
 
         return true;
     }
@@ -128,26 +141,43 @@ namespace LevelSensor {
             (noOfRegisters & 0xFF)              // 0x10
         };
 
+        #ifdef DEBUG_MODE
+        Serial.println("Sending query to sensor.");
+        #endif
+
         sendData(packet, sizeof(packet));
         delay(100);
 
+        #ifdef DEBUG_MODE
+        Serial.println("Reading response from sensor.");
+        #endif
+
         read(rawData, sizeof(rawData));
+
+        #ifdef DEBUG_MODE
+        for(int i = 0; i < sizeof(rawData); i++) {
+            Serial.print(rawData[i], HEX);
+            Serial.print(" ");
+        }
+        Serial.println();
+        #endif
+
         return processData();
     }
 
     void MagnetoProbe_SYWA::write(const uint8_t *buf, uint32_t len) {
         rs485ModeTX();
         modbus->write(buf, len);
-        delay(50);
+        delay(100);
     }
 
     void MagnetoProbe_SYWA::read(uint8_t *buf, uint32_t len) {
         rs485ModeRX();
         // while(modbus->available() == 0); // Wain in blocking mode
         if(modbus->available()) {
-            modbus->read(buf, len);
+            modbus->read(rawData, sizeof(rawData));
         }
-        delay(50);
+        delay(100);
     }
 
     bool MagnetoProbe_SYWA::sendData(const uint8_t *buf, uint32_t len) {
@@ -158,6 +188,15 @@ namespace LevelSensor {
         uint8_t *buffer = (uint8_t *) malloc(totLen);
         memcpy(buffer, buf, len);
         memcpy(&buffer[len], &mCRC, lenCRC);
+
+        #ifdef DEBUG_MODE
+        Serial.print("Query: ");
+        for(int i = 0; i < totLen; i++) {
+          Serial.print(buffer[i], HEX);
+          Serial.print(" ");
+        }
+        Serial.println();
+        #endif
 
         write(buffer, totLen);
 
