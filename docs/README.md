@@ -27,6 +27,7 @@ Following are the required components needed for this application:
 - ✔️ LCD 20x4 I2C
 - ✔️ SDMMC module
 - ✔️ Buck converter
+- ✔️ Relay Module (2x or 4x Channel)
 
 According to data sheet sensor works on 24 to 26VDC power supply, while the buck
 converter will be used for powering rest of the components and can take input
@@ -69,6 +70,8 @@ Connect the devices/modules as per following connection table:
 | 7 | D18 | SDMMC SCK |
 | 8 | D19 | SDMMC MISO |
 | 9 | D23 | SDMMC MOSI |
+| 10 | D32 | RELAY IN1 |
+| 11 | D33 | RELAY IN2 |
 
 Power connections are as follows:
 
@@ -82,11 +85,13 @@ Power connections are as follows:
 | 6 | LCD GND | BUCK OUT - |
 | 7 | SDMMC VCC | BUCK OUT + |
 | 8 | SDMMC GND | BUCK OUT - |
+| 9 | RELAY VCC | BUCK OUT + |
+| 10 | RELAY GND | BUCK OUT - |
 
 Follow the diagram for more intuitive idea.
 - See [Connection Table](Connection_Table.pdf)
 
-![Connection Diagram](Connection_Diagram.jpg)
+![Connection Diagram](Connection_Diagram.png)
 
 ---
 
@@ -99,11 +104,13 @@ Just simply upload the program using Arduino IDE.
 - ✔️ Sensor
 - ✔️ LCD
 - ❌ Logging
-- ❌ Bluetooth Stream
+- ✔️ Bluetooth Stream
+- ✔️ Power Saving
 
 ## TODO
 
 - ✔️ Modbus sensor readout library
 - ✔️ LCD interface
 - ❌ Data logging
-- ❌ Bluetooth Stream
+- ✔️ Bluetooth Stream
+- ✔️ Power Saving

@@ -89,11 +89,6 @@ namespace LevelSensor {
         digitalWrite(RS485_RE, LOW);
 
         delay(50);
-
-        #ifdef DEBUG_MODE
-        Serial.println("Level Sensor Init Complete.");
-        #endif
-
         return true;
     }
 
@@ -141,27 +136,10 @@ namespace LevelSensor {
             (noOfRegisters & 0xFF)              // 0x10
         };
 
-        #ifdef DEBUG_MODE
-        Serial.println("Sending query to sensor.");
-        #endif
-
         sendData(packet, sizeof(packet));
         delay(100);
 
-        #ifdef DEBUG_MODE
-        Serial.println("Reading response from sensor.");
-        #endif
-
         read(rawData, sizeof(rawData));
-
-        #ifdef DEBUG_MODE
-        for(int i = 0; i < sizeof(rawData); i++) {
-            Serial.print(rawData[i], HEX);
-            Serial.print(" ");
-        }
-        Serial.println();
-        #endif
-
         return processData();
     }
 
@@ -221,6 +199,15 @@ namespace LevelSensor {
         bool validFlag = false;
         bool foundFlag = false;
         bool broadcastFlag = false;
+
+        #ifdef DEBUG_MODE
+        Serial.print("Response: ");
+        for(int i = 0; i < sizeof(rawData); i++) {
+            Serial.print(rawData[i], HEX);
+            Serial.print(" ");
+        }
+        Serial.println();
+        #endif
 
         if(rawData[idx] == probeAddress) {
             foundFlag = true;
