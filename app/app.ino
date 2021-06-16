@@ -68,14 +68,13 @@ void IRAM_ATTR timerISR(void) {
     counter++;
     if(counter > 1000) {
         counter = 0;
-        digitalWrite(LED_BLUE, !digitalRead(2));
+        digitalWrite(LED_BLUE, !digitalRead(LED_BLUE));
     }
 
     relayCounter++;
     if(relayCounter >= (powerSaveTime * 1000)) {
         relayCounter = 0;
-        digitalWrite(SENSOR_RELAY_PIN, LOW);
-        digitalWrite(MODULE_RELAY_PIN, LOW);
+        deviceEn(0);
     }
 
     portEXIT_CRITICAL_ISR(&timerMux);
@@ -86,8 +85,7 @@ void IRAM_ATTR buttonISR(void) {
     if(millis() - DEB_TIME > debounceTimer) {
         debounceTimer = millis();
         relayCounter = 0;
-        digitalWrite(SENSOR_RELAY_PIN, HIGH);
-        digitalWrite(MODULE_RELAY_PIN, HIGH);
+        deviceEn(1);
     }
 }
 
@@ -127,8 +125,8 @@ void InitGPIO(void) {
     pinMode(MODULE_RELAY_PIN, OUTPUT);
 
     digitalWrite(LED_BLUE, LOW);
-    digitalWrite(SENSOR_RELAY_PIN, HIGH);
-    digitalWrite(MODULE_RELAY_PIN, HIGH);
+    digitalWrite(SENSOR_RELAY_PIN, LOW);
+    digitalWrite(MODULE_RELAY_PIN, LOW);
 
     pinMode(BTN_BOOT, INPUT_PULLUP);
     attachInterrupt(BTN_BOOT, buttonISR, FALLING);
@@ -210,4 +208,9 @@ void sendDataViaBT(void) {
     len += sizeof(footer);
 
     bt.write(buf, len);
+}
+
+void deviceEn(uint8_t enable) {
+    digitalWrite(SENSOR_RELAY_PIN, !enable);
+    digitalWrite(MODULE_RELAY_PIN, !enable);
 }
