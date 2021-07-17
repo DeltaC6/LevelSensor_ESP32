@@ -61,8 +61,8 @@ Connect the devices/modules as per following connection table:
 
 | S. No. | ESP32 PIN | DEVICE PIN |
 |:-------|:----------|:-----------|
-| 1 | D16 | RS485 RO | 
-| 2 | D17 | RS485 DI |
+| 1 | D16 RX | RS485 RO | 
+| 2 | D17 TX | RS485 DI |
 | 3 | D25 | RS485 DE |
 | 4 | D26 | RS485 RE |
 | 5 | D21 | LCD SDA |
@@ -70,8 +70,9 @@ Connect the devices/modules as per following connection table:
 | 7 | D18 | SDMMC SCK |
 | 8 | D19 | SDMMC MISO |
 | 9 | D23 | SDMMC MOSI |
-| 10 | D32 | RELAY IN1 |
-| 11 | D33 | RELAY IN2 |
+| 10 | D27 | SDMMC CS |
+| 11 | D32 | RELAY IN1 |
+| 12 | D33 | RELAY IN2 |
 
 Power connections are as follows:
 

@@ -165,8 +165,8 @@ namespace LevelSensor {
             static const uint32_t SERIAL_BAUD       = 9600;
             static const uint8_t SERIAL_RX          = 16;
             static const uint8_t SERIAL_TX          = 17;
-            static const uint8_t RS485_DE           = 25;
-            static const uint8_t RS485_RE           = 26;
+            static const uint8_t RS485_DE           = 26;
+            static const uint8_t RS485_RE           = 25;
 
             uint8_t rawData[40];
             union {

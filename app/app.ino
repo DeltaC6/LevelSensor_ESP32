@@ -25,6 +25,7 @@
 //============================================================================//
 
 //===== DEFINITIONS SECTION ==================================================//
+// Debugging
 #define debug   Serial
 
 // IO's
@@ -36,26 +37,36 @@ static const uint8_t MODULE_RELAY_PIN = 33;
 // Timer's
 static hw_timer_t *timer = NULL;
 static portMUX_TYPE timerMux = portMUX_INITIALIZER_UNLOCKED;
-//============================================================================//
 
-//===== GLOBAL VARIABLES SECTION =============================================//
+// Button Debounce
 static const uint8_t DEB_TIME = 50;
 
+// Level Sensor Probe
 static const uint8_t PROBE_ADDR = 0x07;
 static LevelSensor::MagnetoProbe_SYWA sensor;
 
+// LCD 20x4 I2C
 static const uint8_t LCD_ADDR = 0x27;
 static const uint8_t LCD_COLS = 20;
 static const uint8_t LCD_ROWS = 4;
 static LiquidCrystal_I2C lcd(LCD_ADDR, LCD_COLS, LCD_ROWS);
 
-static const uint8_t BT_NAME[] = "ESP32_LS";
+// Bluetooth
+static const uint8_t BT_NAME[] = "LevelSensor";
 static const uint8_t BT_PIN[] = "1234";
 static BluetoothSerial bt;
 
-// Time in seconds to turn of the sensor and devices for power saving.
+// Sleep Time
 static uint32_t powerSaveTime = 120;
+//============================================================================//
+
+//===== GLOBAL VARIABLES SECTION =============================================//
+
 static uint32_t relayCounter = 0;
+
+// Flags
+uint8_t updateFlag = 0;
+uint8_t sleepFlag = 0;
 //============================================================================//
 
 //===== ISR SECTION ==========================================================//
@@ -66,15 +77,26 @@ void IRAM_ATTR timerISR(void) {
     // Heartbeat. Blue LED should blink every second.
     static uint32_t counter = 0;
     counter++;
-    if(counter > 1000) {
+    if(counter >= 500) {
         counter = 0;
         digitalWrite(LED_BLUE, !digitalRead(LED_BLUE));
     }
 
-    relayCounter++;
-    if(relayCounter >= (powerSaveTime * 1000)) {
-        relayCounter = 0;
-        deviceEn(0);
+    // This will update the data on LCD every second.
+    static uint32_t updateCounter = 0;
+    updateCounter++;
+    if(updateCounter >= 1000) {
+        updateCounter = 0;
+        updateFlag = 1;
+    }
+
+    // This will turn off all the devices and put controller to sleep
+    if(!sleepFlag) {
+        relayCounter++;
+        if(relayCounter >= (powerSaveTime * 1000)) {
+            relayCounter = 0;
+            sleepFlag = 1;
+        }
     }
 
     portEXIT_CRITICAL_ISR(&timerMux);
@@ -85,6 +107,7 @@ void IRAM_ATTR buttonISR(void) {
     if(millis() - DEB_TIME > debounceTimer) {
         debounceTimer = millis();
         relayCounter = 0;
+        sleepFlag = 0;
         deviceEn(1);
     }
 }
@@ -95,23 +118,47 @@ void setup(void) {
     InitSerial();
     InitGPIO();
     InitTimer();
-    InitLCD();
     InitBT();
-
+    InitLCD();
+    
     if(!sensor.begin()) {
         debug.println("Could not initialize level sensor.");
         return;
     }
     sensor.setProbeAddress(PROBE_ADDR);
-
+    
     debug.println("Initialization complete.");
 }
 
 void loop(void) {
-    sensor.getData();
-    showSensorData();
-    sendDataViaBT();
-    delay(1000);
+
+    // This will update the reading value every second.
+    if(updateFlag && !sleepFlag) {
+        updateFlag = 0;
+        sensor.getData();
+
+        // // Dummy data for testing.
+        // sensor.setFuelLevel(1500);
+        // sensor.setWaterLevel(300);
+        // sensor.setFuelAvgTemp(25);
+        
+        showSensorData(&sensor);
+        sendDataViaBT();
+    }
+
+    // This will turn off all the modules and put controller to sleep.
+    if(sleepFlag) {
+
+        // Resetting all values of level sensor.
+        memset(&sensor, 0, sizeof(sensor));
+        showSensorData(&sensor);
+
+        // Disbaling power of all connected devices.
+        deviceEn(0);
+
+        // Entering sleep mode.
+        enterSleepMode();
+    }
 }
 
 void InitSerial(void) {
@@ -130,6 +177,8 @@ void InitGPIO(void) {
 
     pinMode(BTN_BOOT, INPUT_PULLUP);
     attachInterrupt(BTN_BOOT, buttonISR, FALLING);
+
+    delay(100);
 }
 
 void InitTimer(void) {
@@ -150,33 +199,40 @@ void InitBT(void) {
     bt.setPin((char *) BT_PIN);
 }
 
-void showSensorData(void) {
+void showSensorData(LevelSensor::MagnetoProbe_SYWA *s) {
     debug.print("Fuel Level: ");
-    debug.print(sensor.getFuelLevel() / 10);
+    debug.print(s->getFuelLevel() / 10);
     debug.println(" cm");
 
     debug.print("Water Level: ");
-    debug.print(sensor.getWaterLevel() / 10);
+    debug.print(s->getWaterLevel() / 10);
     debug.println(" cm");
 
     debug.print("Fuel Avg Temp: ");
-    debug.print(sensor.getFuelAvgTemp());
+    debug.print(s->getFuelAvgTemp());
     debug.println(" C");
 
-    lcd.setCursor(0, 0);
+    lcd.setCursor(1, 0);
     lcd.print("FL: ");
-    lcd.print(sensor.getFuelLevel() / 10);
-    lcd.print(" cm");
+    lcd.print(s->getFuelLevel() / 10);
+    lcd.print(" cm  ");
 
-    lcd.setCursor(0, 1);
+    lcd.setCursor(1, 1);
     lcd.print("WL: ");
-    lcd.print(sensor.getWaterLevel() / 10);
-    lcd.print(" cm");
+    lcd.print(s->getWaterLevel() / 10);
+    lcd.print(" cm  ");
 
-    lcd.setCursor(0, 2);
+    lcd.setCursor(1, 2);
     lcd.print("FAT: ");
-    lcd.print(sensor.getFuelAvgTemp());
-    lcd.print(" C");
+    lcd.print(s->getFuelAvgTemp());
+    lcd.print(" ");
+    lcd.print((char) 223);
+    lcd.print("C  ");
+
+    lcd.setCursor(1, 3);
+    lcd.print("Sleep: ");
+    lcd.print(powerSaveTime - (relayCounter / 1000));
+    lcd.print(" sec  ");
 }
 
 void sendDataViaBT(void) {
@@ -213,4 +269,8 @@ void sendDataViaBT(void) {
 void deviceEn(uint8_t enable) {
     digitalWrite(SENSOR_RELAY_PIN, !enable);
     digitalWrite(MODULE_RELAY_PIN, !enable);
+}
+
+void enterSleepMode(void) {
+
 }
